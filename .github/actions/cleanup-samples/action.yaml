@@ -14,8 +14,13 @@ runs:
   steps:
     - name: Remove samples from melos.yaml
       run: |
-        yq eval 'del(.packages[] | select(. == "packages/samples/*" or . == "samples/*"))' -i ${{ inputs.melos-yaml-path }}
-      shell: sh
+        yq eval 'del(.packages[] | select(. == "packages/samples/*" or . == "samples/*"))' ${{ inputs.melos-yaml-path }} > ${{ inputs.melos-yaml-path }}.new
+        
+        # Keep empty lines
+        diff -U0 -w -b --ignore-blank-lines ${{ inputs.melos-yaml-path }} ${{ inputs.melos-yaml-path }}.new > ${{ inputs.melos-yaml-path }}.diff || true
+        patch ${{ inputs.melos-yaml-path }} < ${{ inputs.melos-yaml-path }}.diff
+        rm ${{ inputs.melos-yaml-path }}.{new,diff}
+      shell: bash
 
     - name: Strip comments from launch.json
       run: strip-json-comments ${{ inputs.vscode-launch-json-path }} > ${{ inputs.vscode-launch-json-path }}.temp
